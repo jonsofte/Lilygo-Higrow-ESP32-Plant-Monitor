@@ -3,24 +3,38 @@
 #include <DHT.h>
 #include <DHT_U.h>
 #include <WiFi.h>
-
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+#include <Preferences.h>
 #define DHTTYPE DHT11
 
 const int LEDPIN = 16;
 const int DHTPIN = 22;
 const int SOIL_PIN = 32;
+int wifiStatus = WL_IDLE_STATUS;
 
-uint64_t chipid;
 char deviceid[21];
-
-char ssid[] = "Telenor8820jag";
-
-int status = WL_IDLE_STATUS;
+String wifiSsid;
+String wifiPwd;
+String ntpServer;
 
 DHT dht(DHTPIN, DHTTYPE);
-
+Preferences preferences;
 WiFiClient net;
-//MQTTClient client;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
+
+void getConfigurationPreferences() {
+  Serial.print("Reading Configuration");
+  preferences.begin("configuration", true);
+  wifiSsid = preferences.getString("wifi_ssid");
+  wifiPwd = preferences.getString("wifi_pwd");
+  ntpServer = preferences.getString("ntp_server");
+  preferences.end();
+  Serial.println("...Done");
+}
+
+
 
 void printWifiData() {
   IPAddress ip = WiFi.localIP();
@@ -31,52 +45,55 @@ void printWifiData() {
 void printCurrentNet() {
   Serial.print("SSID: ");
   Serial.print(WiFi.SSID());
-
   long rssi = WiFi.RSSI();
-  Serial.print(" Signal strength (RSSI):");
+  Serial.print(" Signal strength (RSSI): ");
   Serial.println(rssi);
 }
 
-void setup() {
-  Serial.begin(9600);
-  dht.begin();
+void setupWifi() {
 
-  chipid = ESP.getEfuseMac();
-  sprintf(deviceid, "%" PRIu64, chipid);
-
-  Serial.println(WiFi.status()); 
-
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(ssid);
-    status = WiFi.begin(ssid, pwd);
+  while (wifiStatus != WL_CONNECTED) 
+  {
+    Serial.println("Attempting to connect to SSID: " + wifiSsid) ;
+    wifiStatus = WiFi.begin(wifiSsid.c_str(), wifiPwd.c_str());
     delay(10000);
   }
 
-  Serial.print("Connected to the network");
-  printCurrentNet();
+  Serial.println("Connected:");
   printWifiData();
+  printCurrentNet();
+}
 
-//  client.begin("10.0.0.10",net);
+void setupNTPClient() {
+  NTPClient timeClient(ntpUDP, ntpServer.c_str(), 3600, 15 * 60 * 1000);
+  timeClient.begin();
+}
 
-//  while (!client.connect("chilli", "", "")) {
-//    Serial.print(".");
- //   delay(1000);
- // }
+void setup() {
+  Serial.begin(9600); 
+  sprintf(deviceid, "%" PRIu64, ESP.getEfuseMac());
 
-//  Serial.println("\nconnected!");
-//  client.subscribe("/hello");
+  dht.begin();
+
+  setConfigurationPreferences();
+  getConfigurationPreferences();
+  setupWifi();
+  setupNTPClient();
 }
 
 void loop() {
-  int waterlevel = analogRead(SOIL_PIN);
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
 
+  int waterlevel = analogRead(SOIL_PIN);
   waterlevel = map(waterlevel, 1500, 3200, 1000, 0);
   waterlevel = constrain(waterlevel, 0, 1000);
 
-  Serial.print("DeviceId: ");
+  timeClient.update();
+
+  Serial.print(timeClient.getEpochTime());
+  Serial.print(" " + timeClient.getFormattedTime());
+  Serial.print(" DeviceId: ");
   Serial.print(deviceid);
   Serial.print(" waterlevel: ");
   Serial.print( waterlevel);
@@ -84,6 +101,6 @@ void loop() {
   Serial.print(humidity);
   Serial.print(" temperature: "); 
   Serial.println(temperature);
- // client.publish("/temperature", String(temperature));
-  delay(5000);
+  
+  delay(2000);
 } 
