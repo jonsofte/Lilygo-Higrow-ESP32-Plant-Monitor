@@ -6,43 +6,50 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <Preferences.h>
-#define DHTTYPE DHT11
 
-const int LEDPIN = 16;
-const int DHTPIN = 22;
-const int SOIL_PIN = 32;
+#define DHTTYPE DHT11
+const int _ledPin = 16;
+const int _dhtPin = 22;
+const int _soilPin = 32;
 int wifiStatus = WL_IDLE_STATUS;
 
 char deviceid[21];
-String wifiSsid;
-String wifiPwd;
-String ntpServer;
+String _wifiSSID;
+String _wifiPassword;
+String _ntpServer;
+String _influxDBServerUrl;
+String _influxDBDatabase;
+String _JWTBearerToken;
 
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht(_dhtPin, DHTTYPE);
 Preferences preferences;
-WiFiClient net;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
-void getConfigurationPreferences() {
+void getApplicationConfiguration() {
   Serial.print("Reading Configuration");
   preferences.begin("configuration", true);
-  wifiSsid = preferences.getString("wifi_ssid");
-  wifiPwd = preferences.getString("wifi_pwd");
-  ntpServer = preferences.getString("ntp_server");
+
+  _wifiSSID = preferences.getString("_wifiSSID");
+  _wifiPassword = preferences.getString("_wifiPassword");
+  _ntpServer = preferences.getString("_ntpServer");
+  _influxDBServerUrl = preferences.getString("_influxDBUrl");
+  _influxDBDatabase = preferences.getString("_influxDBDatabase");
+  _JWTBearerToken = preferences.getString("_JWTBearerToken");
+  
   preferences.end();
   Serial.println("...Done");
 }
 
 
 
-void printWifiData() {
+void printNetworkStatus() {
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
 }
 
-void printCurrentNet() {
+void printWifiStatus() {
   Serial.print("SSID: ");
   Serial.print(WiFi.SSID());
   long rssi = WiFi.RSSI();
@@ -54,14 +61,14 @@ void setupWifi() {
 
   while (wifiStatus != WL_CONNECTED) 
   {
-    Serial.println("Attempting to connect to SSID: " + wifiSsid) ;
-    wifiStatus = WiFi.begin(wifiSsid.c_str(), wifiPwd.c_str());
+    Serial.println("Attempting to connect to SSID: " + wifiSSID) ;
+    wifiStatus = WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
     delay(10000);
   }
 
-  Serial.println("Connected:");
-  printWifiData();
-  printCurrentNet();
+  Serial.println("Connected");
+  printWifiStatus();
+  printNetworkStatus();
 }
 
 void setupNTPClient() {
@@ -70,13 +77,15 @@ void setupNTPClient() {
 }
 
 void setup() {
-  Serial.begin(9600); 
+  Serial.begin(9600);
+
+  // Get ESP32 DeviceID 
   sprintf(deviceid, "%" PRIu64, ESP.getEfuseMac());
 
   dht.begin();
 
-  setConfigurationPreferences();
-  getConfigurationPreferences();
+//  setConfigurationPreferences();
+  getApplicationConfiguration();
   setupWifi();
   setupNTPClient();
 }
@@ -85,7 +94,7 @@ void loop() {
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
 
-  int waterlevel = analogRead(SOIL_PIN);
+  int waterlevel = analogRead(_soilPin);
   waterlevel = map(waterlevel, 1500, 3200, 1000, 0);
   waterlevel = constrain(waterlevel, 0, 1000);
 
