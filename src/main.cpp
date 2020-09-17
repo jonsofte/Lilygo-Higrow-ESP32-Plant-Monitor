@@ -141,7 +141,7 @@ void sendToInfluxDB(int waterlevel, float humidity, float temperature, float lux
   }  
 } 
 
-int getWaterLevel() {
+int readWaterLevel() {
   int waterlevel = analogRead(_soilPin);
   waterlevel = map(waterlevel, 0, 4095, 1000, 0);
   waterlevel = constrain(waterlevel, 0, 1000);
@@ -151,7 +151,7 @@ int getWaterLevel() {
 uint32_t readSalinity()
 {
     uint8_t samples = 120;
-    uint32_t humi = 0;
+    uint32_t total = 0;
     uint16_t array[120];
 
     for (int i = 0; i < samples; i++) {
@@ -161,10 +161,10 @@ uint32_t readSalinity()
     std::sort(array, array + samples);
     for (int i = 0; i < samples; i++) {
         if (i == 0 || i == samples - 1)continue;
-        humi += array[i];
+        total += array[i];
     }
-    humi /= samples - 2;
-    return humi;
+    total /= samples - 2;
+    return total;
 }
 
 uint16_t readSoil()
@@ -188,31 +188,30 @@ void setup() {
   digitalWrite(_powerCtrl, 1);
   delay(200);
   Wire.begin(_i2cSDA, _i2cSCL);
-	delay(200);
+  delay(200);
 
   dht.begin();
   lightMeter.begin();
   sprintf(deviceid, "%" PRIu64, ESP.getEfuseMac());
   
-  //setConfigurationPreferences();
+  setConfigurationPreferences();
   getApplicationConfiguration();
   setupWifi();
   setupNTPClient();
 }
 
 void loop() {
-  int waterlevel = getWaterLevel();
+  int waterlevel = readWaterLevel();
   float lux = lightMeter.readLightLevel();
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
   uint32_t salinity = readSalinity();
   float voltageMV = readVoltage();
-
   timeClient.update();
 
   printToSerial(waterlevel,humidity,temperature,lux,salinity,voltageMV);
-  sendToInfluxDB(waterlevel,humidity,temperature,lux,salinity,voltageMV);
   Serial.println("");
+  sendToInfluxDB(waterlevel,humidity,temperature,lux,salinity,voltageMV);
 
   delay(_updateDataInSeconds * 1000);
-} 
+}
