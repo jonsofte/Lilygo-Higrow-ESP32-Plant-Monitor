@@ -31,6 +31,7 @@ String _ntpServer;
 String _influxDBHost;
 int _influxDBPort;
 String _influxDBDatabase;
+String _influxDBMasurement;
 String _InfluxURI;
 
 Preferences preferences;
@@ -52,6 +53,7 @@ void getApplicationConfiguration() {
   _influxDBHost = preferences.getString("InfluxDBHost");
   _influxDBPort = preferences.getInt("InfluxDBPort");
   _influxDBDatabase = preferences.getString("InfluxDBDB");
+  _influxDBMasurement = preferences.getString("IDBMeasure");
   _InfluxURI = "/write?db=" + _influxDBDatabase + "&precision=s";
 
   preferences.end();
@@ -86,7 +88,8 @@ void setupWifi() {
 }
 
 void setupNTPClient() {
-  NTPClient timeClient(ntpUDP, _ntpServer.c_str(), 3600, 15 * 60 * 1000);
+  int _updateIntervalInMilliSeconds = 30 * 60 * 1000;
+  NTPClient timeClient(ntpUDP, _ntpServer.c_str(), 3600, _updateIntervalInMilliSeconds);
   timeClient.begin();
 }
 
@@ -110,7 +113,7 @@ void printToSerial(int waterlevel, float humidity, float temperature, float lux,
 }
 
 void sendToInfluxDB(int waterlevel, float humidity, float temperature, float lux, uint32_t salinity, float voltage) {  
-  String Data = "plant_measurement";
+  String Data = _influxDBMasurement;
   Data.concat(",device=");
   Data.concat(deviceid);
   Data.concat(",plant=" + _plantID);
@@ -135,7 +138,6 @@ void sendToInfluxDB(int waterlevel, float humidity, float temperature, float lux
   http.addHeader("Content-Type", "text/plain");  
   int httpCode = http.POST(Data);      
   http.end();
-
   if (httpCode == 204 ) {
     Serial.print(" *SENT* ");
   }  
@@ -194,8 +196,9 @@ void setup() {
   lightMeter.begin();
   sprintf(deviceid, "%" PRIu64, ESP.getEfuseMac());
   
-  setConfigurationPreferences();
+  setApplicationConfiguration();
   getApplicationConfiguration();
+  
   setupWifi();
   setupNTPClient();
 }
@@ -210,8 +213,7 @@ void loop() {
   timeClient.update();
 
   printToSerial(waterlevel,humidity,temperature,lux,salinity,voltageMV);
-  Serial.println("");
   sendToInfluxDB(waterlevel,humidity,temperature,lux,salinity,voltageMV);
-
+  Serial.println("");
   delay(_updateDataInSeconds * 1000);
 }
