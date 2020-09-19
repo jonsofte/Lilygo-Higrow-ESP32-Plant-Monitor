@@ -3,7 +3,7 @@
 
 Preferences setupPreferences;
 
-void setConfigurationPreferences() {
+void setApplicationConfiguration() {
   Serial.print("Writing Configuration");
   setupPreferences.begin("configuration", false);
   setupPreferences.clear();
@@ -14,6 +14,7 @@ void setConfigurationPreferences() {
   setupPreferences.putString("InfluxDBHost","");
   setupPreferences.putInt("InfluxDBPort", 8086);
   setupPreferences.putString("InfluxDBDB","");
+  setupPreferences.putString("InfluxDBMeasurement","");
   setupPreferences.putString("PlantID","");
   setupPreferences.end();
   Serial.println("...Done");
