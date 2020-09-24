@@ -28,4 +28,7 @@ Add the following values:
 
 <img src="docs/img/LILYGO-T-Higrow-1.jpg" alt="Higrow 1"
 title="LILYGO® T-Higrow ESP32" height="500" /><img src="docs/img/LILYGO-T-Higrow-2.jpg" alt="Higrow 2"
-title="LILYGO® T-Higrow ESP32 " height="500" />
+title="LILYGO® T-Higrow ESP32" height="500" />
+
+<img src="docs/img/grafana.jpg" alt="Grafana Example"
+title="Grafana Example" />
