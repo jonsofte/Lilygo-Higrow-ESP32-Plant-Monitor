@@ -20,8 +20,12 @@ Add the following values:
 **WifiSSID:** SSID for wifi network  
 **WifiPassword:** Wifi password  
 **NtpServer:** Network Time Protocol server (like europe.pool.ntp.org)  
-**InfluxDBHost:** Hostname or IP address to InfluxDB server  
+**InfluxDBHost:** Hostname or IP address of InfluxDB server  
 **InfluxDBPort:** InfluxDB port (Default 8086)  
 **InfluxDBDB:** Database name on InfluxDB server  
 **IDBMeasure:** InfluxDB measurement name  
-**PlantID:** ID for plant when logging to InfluxDB  
+**PlantID:** ID for plant to identify measurement on InfluxDB  
+
+## Images
+
+![Higrow 1](\docs/img/LILYGO-T-Higrow-1.jpg)![Higrow 2](\docs/img/LILYGO-T-Higrow-2.jpg)
