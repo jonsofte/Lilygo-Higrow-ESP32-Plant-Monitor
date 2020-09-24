@@ -28,4 +28,4 @@ Add the following values:
 
 ## Images
 
-![Higrow 1](\docs/img/LILYGO-T-Higrow-1.jpg)![Higrow 2](\docs/img/LILYGO-T-Higrow-2.jpg)
+![Higrow 1](docs/img/LILYGO-T-Higrow-1.jpg)![Higrow 2](docs/img/LILYGO-T-Higrow-2.jpg)
