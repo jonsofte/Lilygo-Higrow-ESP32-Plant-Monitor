@@ -196,7 +196,7 @@ void setup() {
   lightMeter.begin();
   sprintf(deviceid, "%" PRIu64, ESP.getEfuseMac());
   
-  setApplicationConfiguration();
+  //setApplicationConfiguration();
   getApplicationConfiguration();
   
   setupWifi();
@@ -204,6 +204,7 @@ void setup() {
 }
 
 void loop() {
+  ulong startMillis = millis();
   int waterlevel = readWaterLevel();
   float lux = lightMeter.readLightLevel();
   float humidity = dht.readHumidity();
@@ -212,8 +213,9 @@ void loop() {
   float voltageMV = readVoltage();
   timeClient.update();
 
-  printToSerial(waterlevel,humidity,temperature,lux,salinity,voltageMV);
   sendToInfluxDB(waterlevel,humidity,temperature,lux,salinity,voltageMV);
+  printToSerial(waterlevel,humidity,temperature,lux,salinity,voltageMV);
   Serial.println("");
-  delay(_updateDataInSeconds * 1000);
+
+  delay((_updateDataInSeconds * 1000)- (millis() - startMillis));
 }
